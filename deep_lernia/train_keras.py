@@ -315,9 +315,9 @@ class trainKeras:
         y_test = y[shuffleL][N_tr:]
         return X_train, X_test, y_train, y_test
 
-    def evaluate(self,shuffle=True):
+    def evaluate(self,shuffle=True,n_in=1,n_out=1):
         """evaluate performances"""
-        X_train, X_test, y_train, y_test = self.splitSet(self.X,self.y,shuffle=shuffle)
+        X_train, X_test, y_train, y_test = self.splitSet(self.X,self.y,shuffle=shuffle,n_in=n_in,n_out=n_out)
         y_pred = self.predict(X_test)
         kpi = t_s.calcMetrics(y_pred[:,0], y_test[:,0])
         return kpi
@@ -353,6 +353,7 @@ class trainKeras:
         tL = self.X.columns
         x_val = 16
         perfL = []
+        print('all')
         for j in range(x_val):
             kpi = self.evaluate(shuffle=shuffle)
             kpi['feature'] = "all"
