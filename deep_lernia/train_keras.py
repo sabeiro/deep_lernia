@@ -149,6 +149,8 @@ class trainKeras:
         val_loss = np.concatenate([x.history['val_loss'] for x in history])
         ax.plot(loss,label='train')
         ax.plot(val_loss,label='test')
+        ax.set_xlabel("number of epochs")
+        ax.set_ylabel("realtive error")
         ax.legend()
 
     def plotPrediction(self,X=[None],y=[None],t=[None],ax=None,color=None,reshape=None):
@@ -315,7 +317,7 @@ class trainKeras:
         y_test = y[shuffleL][N_tr:]
         return X_train, X_test, y_train, y_test
 
-    def evaluate(self,shuffle=True,n_in=1,n_out=1):
+    def evaluate(self,shuffle=True,mode="predict",n_in=1,n_out=1):
         """evaluate performances"""
         X_train, X_test, y_train, y_test = self.splitSet(self.X,self.y,shuffle=shuffle,n_in=n_in,n_out=n_out)
         y_pred = self.predict(X_test)
@@ -348,23 +350,25 @@ class trainKeras:
         kpi = t_s.calcMetrics(y_pred[:,0], y_test[:,0])
         return kpi
     
-    def featKnockOut(self,shuffle=True,portion=0.8):
+    def featKnockOut(self,X=[None],shuffle=True,portion=0.8,mode="predict"):
         """feature knock out, recursively remove one feature at time and calculate performances"""
-        tL = self.X.columns
+        if any(X): self.setX(X)
+        X = self.X
+        tL = X.columns
         x_val = 16
         perfL = []
         print('all')
         for j in range(x_val):
-            kpi = self.evaluate(shuffle=shuffle)
+            kpi = self.evaluate(shuffle=shuffle,mode=mode)
             kpi['feature'] = "all"
             perfL.append(kpi)
         for i in tL:
             print(i)
-            X1 = self.X.copy()
+            X1 = X.copy()
             X1.loc[:,i] = np.random.random(X1.shape[0])
             self.setX(X1)
             for j in range(x_val):
-                kpi = self.evaluate(shuffle=shuffle)
+                kpi = self.evaluate(shuffle=shuffle,mode=mode)
                 kpi['feature'] = "- " + i
                 perfL.append(kpi)
         perfL = pd.DataFrame(perfL)

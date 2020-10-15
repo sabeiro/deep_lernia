@@ -186,17 +186,19 @@ class timeSeries(trainKeras):
         kpi = t_s.calcMetrics(y_pred[:,0], y_test[:,0])
         return kpi
 
-    def evaluate(self,shuffle=True,portion=0.8,n_in=1,n_out=1):
+    def evaluate(self,shuffle=True,mode="forecast",portion=0.8,n_in=1,n_out=1):
         """evaluate performances"""
         X_train, y_train, X_test, y_test = self.splitSet(self.X,shuffle=shuffle,portion=portion,n_in=n_in,n_out=n_out)
-        #y_pred = self.predict(X_test)
-        y_pred = self.forecast(X_test)
+        if mode == "forecast":
+            y_pred = self.forecast(X_test)
+        else:
+            y_pred = self.predict(X_test)
         kpi = t_s.calcMetrics(y_pred[:,0], y_test[:,0])
         return kpi
     
-    def trainCross(self,X_test,batch_size=1,nb_epoch=300,calc_metrics=False):
+    def trainCross(self,X_test,batch_size=1,nb_epoch=300,calc_metrics=False,n_in=1,n_out=1):
         """train a baseline model resetting the states every nb_epochs"""
-        X_train, y_train, X_train1, y_train1 = self.splitSet(self.X,portion=1.)
+        X_train, y_train, X_train1, y_train1 = self.splitSet(self.X,portion=1.,n_in=n_in,n_out=n_out)
         X_test = np.asarray(self.scaleX(X_test))
         X_test, y_test, X_test1, y_test1 = self.splitSet(X_test,portion=1.)
         self.defModel()
@@ -264,8 +266,8 @@ class timeSeries(trainKeras):
             y_pred.append(pred)
         y_pred = np.asarray(y_pred)
         return y_pred
-
     
+
     def forecast(self,X_test,batch_size=1,n_in=1):
         """forecast using longshort"""
         if len(X_test.shape) == 2:
@@ -276,14 +278,13 @@ class timeSeries(trainKeras):
         for i in range(0,n_in):
             y_fore[i] = X_test[0][i]
         for i in range(len(X_test)-n_in):
-            #X1 = y_fore[i].reshape(1,-1)
-            X1 = y_fore[:i+n_in]
+            X1 = y_fore[i].reshape(1,-1)
+            #X1 = y_fore[:i+n_in]
             if n_in > 1:
                 X1 = self.shiftColumns(X1,n_in=n_in).values
             X1 = self.reshape(X1)
             pred = self.model.predict(X1, batch_size=batch_size)
-            y_fore[i] = pred[0]
-
+            y_fore[i+n_in] = pred[-1]
         return y_fore
 
     def forecastLongShort(self,y,ahead=28,epoch=50,n_in=2,n_out=1):
